@@ -73,6 +73,28 @@ class TodoController {
       },
     });
   });
+
+  getATodo = catchAsync(async (req: Request, res: Response) => {
+    // get id and data
+    const todoId = req.params.todoId as string;
+
+    // check that todo exist or error
+    const todo = await todoService.getTodoById(todoId);
+    if (!todo) {
+      return Promise.reject(
+        new ResourceNotFound({
+          message: 'Todo does not exist',
+          data: { todoId },
+        })
+      );
+    }
+
+    // return response
+    res.status(200).json({
+      message: 'Todo retrieved successfully',
+      data: todo,
+    });
+  });
 }
 
 export default new TodoController();

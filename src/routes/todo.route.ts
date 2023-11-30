@@ -4,6 +4,7 @@ import validate from '../middlewares/validator.middleware';
 import {
   createTodo,
   deleteTodo,
+  getATodo,
   updateTodo,
 } from '../validations/todo.validation';
 
@@ -16,6 +17,7 @@ router
 router
   .route('/:todoId')
   .patch(validate(updateTodo), todoController.updateTodo)
-  .delete(validate(deleteTodo), todoController.deleteTodo);
+  .delete(validate(deleteTodo), todoController.deleteTodo)
+  .get(validate(getATodo), todoController.getATodo);
 
 export default router;

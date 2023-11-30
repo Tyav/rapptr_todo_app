@@ -274,4 +274,56 @@ describe('Test for Todo', () => {
         });
     });
   });
+  describe('Get a TODO GET: /api/v1/todos/{todoId}', () => {
+    test('Server should return Todo if id matches', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .get(`/api/v1/todos/${todo.id}`)
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo retrieved successfully',
+            data: {
+              title: 'First todo',
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
+              id: expect.stringMatching(/^[a-f0-9]{24}$/),
+              isDeleted: false,
+              isCompleted: false,
+            },
+          });
+        });
+    });
+    test('Server should return validation error if todo id is not a valid id format', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .get(`/api/v1/todos/${todo.title}`)
+        .expect(400)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Invalid fields',
+            code: ErrorCode.BAD_REQUEST,
+            data: {
+              todoId: 'todoId must be a valid mongo id',
+            },
+          });
+        });
+    });
+    test('Server should return no found error if todo does not exist or is deleted', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await todoService.deleteTodo(todo);
+      await supertest(app)
+        .get(`/api/v1/todos/${todo.id}`)
+        .expect(404)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo does not exist',
+            code: ErrorCode.RESOURCE_NOT_FOUND,
+            data: {
+              todoId: todo.id,
+            },
+          });
+        });
+    });
+  });
 });

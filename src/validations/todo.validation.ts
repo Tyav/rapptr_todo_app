@@ -24,3 +24,7 @@ export const updateTodo = {
 export const deleteTodo = {
   params: Joi.object().keys(updateAndDeleteTodoParams),
 };
+
+export const getATodo = {
+  params: Joi.object().keys({ todoId: Joi.string().custom(objectId) }),
+};
