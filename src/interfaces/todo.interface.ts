@@ -5,7 +5,9 @@ export type CreateTodo = {
 };
 
 export interface ITodoDoc extends CreateTodo, Document {
-  deleted: boolean;
+  isDeleted: boolean;
+  isCompleted: boolean;
+  delete: () => void;
 }
 
 export interface ITodoModel extends Model<ITodoDoc> {}

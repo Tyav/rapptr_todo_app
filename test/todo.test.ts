@@ -4,8 +4,10 @@ setupTestDB();
 import app from '../src/app';
 import { ErrorCode } from '../src/interfaces/error.interface';
 import todoService from '../src/services/todo.service';
+import TodoModel from '../src/models/todo.model';
 /**
- * All test should be written, however this is for demo purposes
+ * All test should be written.
+ * However this is for demo purposes and not all cases will be covered
  */
 describe('Test for Todo', () => {
   describe('Create TODO POST: /api/v1/todos', () => {
@@ -22,6 +24,7 @@ describe('Test for Todo', () => {
               createdAt: expect.any(String),
               updatedAt: expect.any(String),
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
+              isDeleted: false,
             },
           });
         });
@@ -57,11 +60,12 @@ describe('Test for Todo', () => {
               createdAt: expect.any(String),
               updatedAt: expect.any(String),
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
+              isDeleted: false,
             },
           });
         });
       const updateTodo = await todoService.getTodoById(todo.id);
-      expect(updateTodo?.title).toBe('Changed todo')
+      expect(updateTodo?.title).toBe('Changed todo');
     });
     test('Server should return validation error response if there is no title', async () => {
       const todo = await todoService.createTodo('First todo');
@@ -74,7 +78,7 @@ describe('Test for Todo', () => {
             message: 'Invalid fields',
             code: ErrorCode.BAD_REQUEST,
             data: {
-              "body": "body must have at least 1 key",
+              body: 'body must have at least 1 key',
             },
           });
         });
@@ -112,4 +116,34 @@ describe('Test for Todo', () => {
         });
     });
   });
+  describe('Delete TODO DELETE: /api/v1/todos/{todoId}', () => {
+    test('Server should update Todo if title is passed', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .delete(`/api/v1/todos/${todo.id}`)
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo deleted successfully',
+          });
+        });
+      const deletedTodo = await todoService.getTodoById(todo.id);
+      expect(deletedTodo).toBeNull();
+    });
+    test('Server should return no found error if todo does not exist', async () => {
+      await supertest(app)
+        .delete(`/api/v1/todos/65681286e276dea4a21fdce8`)
+        .expect(404)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo does not exist',
+            code: ErrorCode.RESOURCE_NOT_FOUND,
+            data: {
+              todoId: '65681286e276dea4a21fdce8',
+            },
+          });
+        });
+    });
+  });
+
 });

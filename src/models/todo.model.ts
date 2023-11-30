@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import { ITodoDoc, ITodoModel } from '../interfaces/todo.interface';
+import softDeletePlugin from '../utils/softDelete';
+import toJSONPlugin from '../utils/toJSON';
 
 const TodoSchema = new mongoose.Schema<ITodoDoc>(
   {
@@ -8,27 +10,26 @@ const TodoSchema = new mongoose.Schema<ITodoDoc>(
       required: true,
       trim: true,
     },
-    deleted: {
+    isDeleted: {
       type: Boolean,
+      default: false
     },
+    isCompleted: {
+      type: Boolean,
+      default: false
+    }
   },
   {
     timestamps: true,
-    id: true
   }
 );
+
+TodoSchema.plugin(softDeletePlugin);
+TodoSchema.plugin(toJSONPlugin);
 
 // add instance methods directly
 
 // add static methods here
-TodoSchema.method('toJSON', function (...doc) {
-  const obj = this.toObject()
-  obj.id = obj._id.toString();
-
-  delete obj.__v;
-  delete obj._id
-  return obj
-})
 
 const TodoModel = mongoose.model<ITodoDoc, ITodoModel>('Todo', TodoSchema);
 

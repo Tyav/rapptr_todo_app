@@ -1,4 +1,4 @@
-import { CreateTodo } from '../interfaces/todo.interface';
+import { CreateTodo, ITodoDoc } from '../interfaces/todo.interface';
 import TodoModel from '../models/todo.model';
 
 class TodoService {
@@ -20,6 +20,10 @@ class TodoService {
     }, {
       new: true
     })
+  }
+
+  async deleteTodo(todo: ITodoDoc) {
+    return todo.delete()
   }
 }
 

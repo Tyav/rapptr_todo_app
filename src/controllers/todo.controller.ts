@@ -9,7 +9,6 @@ class TodoController {
   createTodo = catchAsync(async (req: Request, res: Response) => {
     const { title } = req.body as CreateTodo;
     const todo = await todoService.createTodo(title);
-
     res.status(201).json({
       message: 'Todo created',
       data: todo,
@@ -35,6 +34,24 @@ class TodoController {
       message: 'Todo updated successfully',
       data: updateTodo
     })
+  })
+
+  deleteTodo = catchAsync(async (req: Request, res: Response) => {
+    // get todoId
+    const todoId = req.params.todoId as string;
+
+    // check that todo exist or error
+    const todo = await todoService.getTodoById(todoId);
+    if (!todo) {
+      return Promise.reject(new ResourceNotFound({ message: 'Todo does not exist', data: { todoId }}))
+    }
+
+    await todoService.deleteTodo(todo);
+
+    res.status(200).json({
+      message: 'Todo deleted successfully'
+    })
+    // return response
   })
 }
 
