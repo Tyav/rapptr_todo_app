@@ -1,3 +1,4 @@
+import { CreateTodo } from '../interfaces/todo.interface';
 import TodoModel from '../models/todo.model';
 
 class TodoService {
@@ -5,6 +6,20 @@ class TodoService {
     return TodoModel.create({
       title,
     });
+  }
+
+  getTodoById(id: string) {
+    return TodoModel.findById(id)
+  }
+
+  updateTodo(todoId: string, data: Partial<CreateTodo>) {
+    return TodoModel.findByIdAndUpdate(todoId, {
+      $set: {
+        ...data
+      }
+    }, {
+      new: true
+    })
   }
 }
 

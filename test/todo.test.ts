@@ -25,20 +25,18 @@ describe('Test for Todo', () => {
             },
           });
         });
-
-        
     });
     test('Server should return validation error response if there is no title', async () => {
       await supertest(app)
         .post('/api/v1/todos')
-        .send({ })
+        .send({})
         .expect(400)
         .then((res) => {
           expect(res.body).toEqual({
             message: 'Invalid fields',
             code: ErrorCode.BAD_REQUEST,
             data: {
-              title: 'title is required'
+              title: 'title is required',
             },
           });
         });
@@ -48,12 +46,12 @@ describe('Test for Todo', () => {
     test('Server should update Todo if title is passed', async () => {
       const todo = await todoService.createTodo('First todo');
       await supertest(app)
-        .post(`/api/v1/todos/${todo.id}`)
+        .patch(`/api/v1/todos/${todo.id}`)
         .send({ title: 'Changed todo' })
         .expect(200)
         .then((res) => {
           expect(res.body).toEqual({
-            message: 'Todo updated',
+            message: 'Todo updated successfully',
             data: {
               title: 'Changed todo',
               createdAt: expect.any(String),
@@ -62,44 +60,45 @@ describe('Test for Todo', () => {
             },
           });
         });
-
-        
+      const updateTodo = await todoService.getTodoById(todo.id);
+      expect(updateTodo?.title).toBe('Changed todo')
     });
     test('Server should return validation error response if there is no title', async () => {
       const todo = await todoService.createTodo('First todo');
       await supertest(app)
-        .post(`/api/v1/todos/${todo.id}`)
-        .send({ })
+        .patch(`/api/v1/todos/${todo.id}`)
+        .send({})
         .expect(400)
         .then((res) => {
           expect(res.body).toEqual({
             message: 'Invalid fields',
             code: ErrorCode.BAD_REQUEST,
             data: {
-              title: 'title is required'
+              "body": "body must have at least 1 key",
             },
           });
         });
     });
-    test('Server should return validation error is todo id is not a valid id format', async () => {
+    test('Server should return validation error if todo id is not a valid id format', async () => {
       const todo = await todoService.createTodo('First todo');
       await supertest(app)
-        .post(`/api/v1/todos/${todo.title}`)
-        .send({ })
+        .patch(`/api/v1/todos/${todo.title}`)
+        .send({})
         .expect(400)
         .then((res) => {
           expect(res.body).toEqual({
             message: 'Invalid fields',
             code: ErrorCode.BAD_REQUEST,
             data: {
-              title: 'title is required'
+              body: 'body must have at least 1 key',
+              todoId: 'todoId must be a valid mongo id',
             },
           });
         });
     });
     test('Server should return no found error if todo does not exist', async () => {
       await supertest(app)
-        .post(`/api/v1/todos/65681286e276dea4a21fdce8`)
+        .patch(`/api/v1/todos/65681286e276dea4a21fdce8`)
         .send({ title: 'Errored Todo' })
         .expect(404)
         .then((res) => {
@@ -107,7 +106,7 @@ describe('Test for Todo', () => {
             message: 'Todo does not exist',
             code: ErrorCode.RESOURCE_NOT_FOUND,
             data: {
-              id: '65681286e276dea4a21fdce8'
+              todoId: '65681286e276dea4a21fdce8',
             },
           });
         });
