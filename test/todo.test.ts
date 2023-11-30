@@ -3,6 +3,7 @@ import supertest from 'supertest';
 setupTestDB();
 import app from '../src/app';
 import { ErrorCode } from '../src/interfaces/error.interface';
+import todoService from '../src/services/todo.service';
 /**
  * All test should be written, however this is for demo purposes
  */
@@ -38,6 +39,75 @@ describe('Test for Todo', () => {
             code: ErrorCode.BAD_REQUEST,
             data: {
               title: 'title is required'
+            },
+          });
+        });
+    });
+  });
+  describe('Update TODO PATCH: /api/v1/todos/{todoId}', () => {
+    test('Server should update Todo if title is passed', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .post(`/api/v1/todos/${todo.id}`)
+        .send({ title: 'Changed todo' })
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo updated',
+            data: {
+              title: 'Changed todo',
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
+              id: expect.stringMatching(/^[a-f0-9]{24}$/),
+            },
+          });
+        });
+
+        
+    });
+    test('Server should return validation error response if there is no title', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .post(`/api/v1/todos/${todo.id}`)
+        .send({ })
+        .expect(400)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Invalid fields',
+            code: ErrorCode.BAD_REQUEST,
+            data: {
+              title: 'title is required'
+            },
+          });
+        });
+    });
+    test('Server should return validation error is todo id is not a valid id format', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .post(`/api/v1/todos/${todo.title}`)
+        .send({ })
+        .expect(400)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Invalid fields',
+            code: ErrorCode.BAD_REQUEST,
+            data: {
+              title: 'title is required'
+            },
+          });
+        });
+    });
+    test('Server should return no found error if todo does not exist', async () => {
+      await supertest(app)
+        .post(`/api/v1/todos/65681286e276dea4a21fdce8`)
+        .send({ title: 'Errored Todo' })
+        .expect(404)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo does not exist',
+            code: ErrorCode.RESOURCE_NOT_FOUND,
+            data: {
+              id: '65681286e276dea4a21fdce8'
             },
           });
         });
