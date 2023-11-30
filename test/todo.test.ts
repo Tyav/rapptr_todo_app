@@ -25,6 +25,7 @@ describe('Test for Todo', () => {
               updatedAt: expect.any(String),
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
+              isCompleted: false,
             },
           });
         });
@@ -61,11 +62,60 @@ describe('Test for Todo', () => {
               updatedAt: expect.any(String),
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
+              isCompleted: false,
             },
           });
         });
       const updateTodo = await todoService.getTodoById(todo.id);
       expect(updateTodo?.title).toBe('Changed todo');
+    });
+    test('Server should update Todo if isCompleted flag is passed', async () => {
+      const todo = await todoService.createTodo('First todo');
+      await supertest(app)
+        .patch(`/api/v1/todos/${todo.id}`)
+        .send({ isCompleted: true })
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo updated successfully',
+            data: {
+              title: 'First todo',
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
+              id: expect.stringMatching(/^[a-f0-9]{24}$/),
+              isDeleted: false,
+              isCompleted: true,
+            },
+          });
+        });
+      const updateTodo = await todoService.getTodoById(todo.id);
+      expect(updateTodo?.isCompleted).toBe(true);
+    });
+    test('Server should update Todo and isCompleted field to false', async () => {
+      const todo = await TodoModel.create({
+        title: 'First todo',
+        isCompleted: true,
+      });
+      await supertest(app)
+        .patch(`/api/v1/todos/${todo.id}`)
+        .send({ isCompleted: false, title: 'Second' })
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todo updated successfully',
+            data: {
+              title: 'Second',
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
+              id: expect.stringMatching(/^[a-f0-9]{24}$/),
+              isDeleted: false,
+              isCompleted: false,
+            },
+          });
+        });
+      const updateTodo = await todoService.getTodoById(todo.id);
+      expect(updateTodo?.isCompleted).toBe(false);
+      expect(updateTodo?.title).toBe('Second');
     });
     test('Server should return validation error response if there is no title', async () => {
       const todo = await todoService.createTodo('First todo');
@@ -145,5 +195,83 @@ describe('Test for Todo', () => {
         });
     });
   });
-
+  describe('Get all TODO GET: /api/v1/todos', () => {
+    test('should fetch all todo in the database', async () => {
+      await TodoModel.insertMany([
+        { title: 'First todo' },
+        { title: 'Second todo' },
+      ]);
+      await supertest(app)
+        .get('/api/v1/todos')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todos retrieved successfully',
+            data: {
+              todos: [
+                {
+                  title: 'First todo',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
+                  id: expect.stringMatching(/^[a-f0-9]{24}$/),
+                  isDeleted: false,
+                  isCompleted: false,
+                },
+                {
+                  title: 'Second todo',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
+                  id: expect.stringMatching(/^[a-f0-9]{24}$/),
+                  isDeleted: false,
+                  isCompleted: false,
+                },
+              ],
+            },
+          });
+        });
+    });
+    test('should fetch all todo in the database that are not deleted', async () => {
+      await TodoModel.insertMany([
+        { title: 'First todo', isDeleted: true },
+        { title: 'Second todo' },
+      ]);
+      await supertest(app)
+        .get('/api/v1/todos')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todos retrieved successfully',
+            data: {
+              todos: [
+                {
+                  title: 'Second todo',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
+                  id: expect.stringMatching(/^[a-f0-9]{24}$/),
+                  isDeleted: false,
+                  isCompleted: false,
+                },
+              ],
+            },
+          });
+        });
+    });
+    test('should return empty list if there are only deleted records in database', async () => {
+      await TodoModel.insertMany([
+        { title: 'First todo', isDeleted: true },
+        { title: 'Second todo', isDeleted: true },
+      ]);
+      await supertest(app)
+        .get('/api/v1/todos')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Todos retrieved successfully',
+            data: {
+              todos: [],
+            },
+          });
+        });
+    });
+  });
 });

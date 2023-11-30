@@ -1,4 +1,4 @@
-import { CreateTodo, ITodoDoc } from '../interfaces/todo.interface';
+import { CreateTodo, ITodoDoc, UpdateTodo } from '../interfaces/todo.interface';
 import TodoModel from '../models/todo.model';
 
 class TodoService {
@@ -9,21 +9,30 @@ class TodoService {
   }
 
   getTodoById(id: string) {
-    return TodoModel.findById(id)
+    return TodoModel.findById(id);
   }
 
-  updateTodo(todoId: string, data: Partial<CreateTodo>) {
-    return TodoModel.findByIdAndUpdate(todoId, {
-      $set: {
-        ...data
+  updateTodo(todoId: string, data: UpdateTodo) {
+    return TodoModel.findByIdAndUpdate(
+      todoId,
+      {
+        $set: {
+          ...data,
+        },
+      },
+      {
+        new: true,
       }
-    }, {
-      new: true
-    })
+    );
   }
 
-  async deleteTodo(todo: ITodoDoc) {
-    return todo.delete()
+  deleteTodo(todo: ITodoDoc) {
+    return todo.delete();
+  }
+
+  // consider pagination
+  getAllTodos() {
+    return TodoModel.find();
   }
 }
 

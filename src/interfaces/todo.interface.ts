@@ -1,12 +1,15 @@
 import { Document, Model } from 'mongoose';
 
-export type CreateTodo = {
+export type TodoDto = {
   title: string;
+  isCompleted: boolean;
+  isDeleted: boolean;
 };
 
-export interface ITodoDoc extends CreateTodo, Document {
-  isDeleted: boolean;
-  isCompleted: boolean;
+export type CreateTodo = Omit<TodoDto, 'isCompleted' | 'isDeleted'>;
+export type UpdateTodo = Partial<Omit<TodoDto, 'isDeleted'>>;
+
+export interface ITodoDoc extends TodoDto, Document {
   delete: () => void;
 }
 
