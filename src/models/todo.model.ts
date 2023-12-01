@@ -12,16 +12,17 @@ const TodoSchema = new mongoose.Schema<ITodoDoc>(
     },
     isDeleted: {
       type: Boolean,
-      default: false
+      default: false,
     },
     isCompleted: {
       type: Boolean,
-      default: false
+      default: false,
     },
     creator: {
       type: String,
-      ref: 'User'
-    }
+      ref: 'User',
+      required: true,
+    },
   },
   {
     timestamps: true,

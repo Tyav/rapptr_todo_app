@@ -32,9 +32,11 @@ class TodoController {
       );
     }
     if (todo.creator !== user.id) {
-      return Promise.reject(new ForbiddenAccess({
-        message: 'User does not have permission to update this todo'
-      }))
+      return Promise.reject(
+        new ForbiddenAccess({
+          message: 'User does not have permission to update this todo',
+        })
+      );
     }
 
     // update todo
@@ -48,6 +50,7 @@ class TodoController {
   });
 
   deleteTodo = catchAsync(async (req: Request, res: Response) => {
+    const user = req.authUser;
     // get todoId
     const todoId = req.params.todoId as string;
 
@@ -61,7 +64,13 @@ class TodoController {
         })
       );
     }
-
+    if (todo.creator !== user.id) {
+      return Promise.reject(
+        new ForbiddenAccess({
+          message: 'User does not have permission to delete this todo',
+        })
+      );
+    }
     await todoService.deleteTodo(todo);
 
     res.status(200).json({

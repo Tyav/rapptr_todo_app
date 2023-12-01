@@ -18,7 +18,7 @@ router
 router
   .route('/:todoId')
   .patch(authMiddleware, validate(updateTodo), todoController.updateTodo)
-  .delete(validate(deleteTodo), todoController.deleteTodo)
+  .delete(authMiddleware, validate(deleteTodo), todoController.deleteTodo)
   .get(validate(getATodo), todoController.getATodo);
 
 export default router;

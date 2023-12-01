@@ -30,7 +30,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
-              creator: user.id
+              creator: user.id,
             },
           });
         });
@@ -90,7 +90,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
-              creator: user.id
+              creator: user.id,
             },
           });
         });
@@ -118,7 +118,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: true,
-              creator: user.id
+              creator: user.id,
             },
           });
         });
@@ -131,7 +131,7 @@ describe('Test for Todo', () => {
       const todo = await TodoModel.create({
         title: 'First todo',
         isCompleted: true,
-        creator: user.id
+        creator: user.id,
       });
       await supertest(app)
         .patch(`/api/v1/todos/${todo.id}`)
@@ -150,7 +150,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
-              creator: user.id
+              creator: user.id,
             },
           });
         });
@@ -221,7 +221,7 @@ describe('Test for Todo', () => {
           });
         });
     });
-    test('Server should return forbidden access error if authed user tries to update a todo they didn\'t create', async () => {
+    test("Server should return forbidden access error if authed user tries to update a todo they didn't create", async () => {
       const { user } = await createAndAuthUser('test_user');
       const { token } = await createAndAuthUser('test_user2');
       const todo = await todoService.createTodo('First todo', user.id);
@@ -247,6 +247,9 @@ describe('Test for Todo', () => {
       const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .delete(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
         .expect(200)
         .then((res) => {
           expect(res.body).toEqual({
@@ -257,8 +260,13 @@ describe('Test for Todo', () => {
       expect(deletedTodo).toBeNull();
     });
     test('Server should return no found error if todo does not exist', async () => {
+      const { user, token } = await createAndAuthUser('test_user');
+
       await supertest(app)
         .delete(`/api/v1/todos/65681286e276dea4a21fdce8`)
+        .set({
+          'x-auth-token': token,
+        })
         .expect(404)
         .then((res) => {
           expect(res.body).toEqual({
@@ -270,12 +278,31 @@ describe('Test for Todo', () => {
           });
         });
     });
+    test("Server should return forbidden access error if authed user tries to delete a todo they didn't create", async () => {
+      const { user } = await createAndAuthUser('test_user');
+      const { token } = await createAndAuthUser('test_user2');
+      const todo = await todoService.createTodo('First todo', user.id);
+      await supertest(app)
+        .delete(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
+        .expect(403)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'User does not have permission to delete this todo',
+            code: ErrorCode.FORBIDDEN,
+          });
+        });
+    });
   });
   describe('Get all TODO GET: /api/v1/todos', () => {
     test('should fetch all todo in the database', async () => {
+      const { user } = await createAndAuthUser('test_user');
+
       await TodoModel.insertMany([
-        { title: 'First todo' },
-        { title: 'Second todo' },
+        { title: 'First todo', creator: user.id },
+        { title: 'Second todo', creator: user.id },
       ]);
       await supertest(app)
         .get('/api/v1/todos')
@@ -292,6 +319,10 @@ describe('Test for Todo', () => {
                   id: expect.stringMatching(/^[a-f0-9]{24}$/),
                   isDeleted: false,
                   isCompleted: false,
+                  creator: {
+                    username: user.username,
+                    id: user.id,
+                  },
                 },
                 {
                   title: 'Second todo',
@@ -300,6 +331,10 @@ describe('Test for Todo', () => {
                   id: expect.stringMatching(/^[a-f0-9]{24}$/),
                   isDeleted: false,
                   isCompleted: false,
+                  creator: {
+                    username: user.username,
+                    id: user.id,
+                  },
                 },
               ],
             },
@@ -307,9 +342,11 @@ describe('Test for Todo', () => {
         });
     });
     test('should fetch all todo in the database that are not deleted', async () => {
+      const { user } = await createAndAuthUser('test_user');
+
       await TodoModel.insertMany([
-        { title: 'First todo', isDeleted: true },
-        { title: 'Second todo' },
+        { title: 'First todo', isDeleted: true, creator: user.id },
+        { title: 'Second todo', creator: user.id },
       ]);
       await supertest(app)
         .get('/api/v1/todos')
@@ -326,6 +363,10 @@ describe('Test for Todo', () => {
                   id: expect.stringMatching(/^[a-f0-9]{24}$/),
                   isDeleted: false,
                   isCompleted: false,
+                  creator: {
+                    username: user.username,
+                    id: user.id,
+                  },
                 },
               ],
             },
@@ -333,9 +374,11 @@ describe('Test for Todo', () => {
         });
     });
     test('should return empty list if there are only deleted records in database', async () => {
+      const { user } = await createAndAuthUser('test_user');
+
       await TodoModel.insertMany([
-        { title: 'First todo', isDeleted: true },
-        { title: 'Second todo', isDeleted: true },
+        { title: 'First todo', isDeleted: true, creator: user.id },
+        { title: 'Second todo', isDeleted: true, creator: user.id },
       ]);
       await supertest(app)
         .get('/api/v1/todos')
@@ -352,7 +395,7 @@ describe('Test for Todo', () => {
   });
   describe('Get a TODO GET: /api/v1/todos/{todoId}', () => {
     test('Server should return Todo if id matches', async () => {
-      const { user, token } = await createAndAuthUser('test_user');
+      const { user } = await createAndAuthUser('test_user');
 
       const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
@@ -368,7 +411,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
-              creator: user.id
+              creator: user.id,
             },
           });
         });
