@@ -7,12 +7,13 @@ import {
   getATodo,
   updateTodo,
 } from '../validations/todo.validation';
+import authMiddleware from '../middlewares/auth.middleware';
 
 const router = express.Router();
 
 router
   .route('/')
-  .post(validate(createTodo), todoController.createTodo)
+  .post(authMiddleware,validate(createTodo), todoController.createTodo)
   .get(todoController.getAllTodo);
 router
   .route('/:todoId')

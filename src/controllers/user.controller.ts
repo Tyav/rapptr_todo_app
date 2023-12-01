@@ -48,18 +48,20 @@ class UserController {
     }
 
     // generate token
-    const token = await tokenService.generateToken(user.id)
+    const token = await tokenService.generateToken(user.id);
 
     // return data
-    res.status(200).json({
+    res
+      // this option can be used if you need to store token in cookie. you will also consider the passport strategy used
+      //.cookie('token', token, config.jwt.cookieOptions)
+      .status(200).json({
       message: 'User logged in successfully',
       data: {
         user,
-        token
-      }
-    })
-
-  })
+        token,
+      },
+    });
+  });
 }
 
 export default new UserController();

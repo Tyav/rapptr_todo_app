@@ -8,6 +8,10 @@ class UserService {
   getUserByUsername(username: string) {
     return UserModel.findOne({ username })
   }
+
+  getUserById(id: string) {
+    return UserModel.findById(id)
+  }
 }
 
 export default new UserService()
