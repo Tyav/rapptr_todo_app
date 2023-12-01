@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 const app = require('../dist/app').default;
+const config = require('../dist/config/config').default;
 
 //connect db or fail
 mongoose
-  .connect('mongodb://localhost:27017/rapptr_todo')
+  .connect(config.mongoose.url)
   .then(() => {
-    app.listen(5050, () => {
-      console.log('App started on port 5050')
+    app.listen(config.port, () => {
+      console.log(`App has started on port: ${config.port}`)
     })
   }).catch((err) => {
     console.log('Database connection failed', err)

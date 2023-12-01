@@ -6,8 +6,9 @@ import { ResourceNotFound } from '../services/error.service';
 
 class TodoController {
   createTodo = catchAsync(async (req: Request, res: Response) => {
+    const user = req.authUser;
     const { title } = req.body as CreateTodo;
-    const todo = await todoService.createTodo(title);
+    const todo = await todoService.createTodo(title, user.id);
     res.status(201).json({
       message: 'Todo created',
       data: todo,

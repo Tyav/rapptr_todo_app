@@ -1,4 +1,4 @@
-import setupTestDB from './setupDB';
+import setupTestDB, { createAndAuthUser } from './setupDB';
 import supertest from 'supertest';
 setupTestDB();
 import app from '../src/app';
@@ -12,8 +12,12 @@ import TodoModel from '../src/models/todo.model';
 describe('Test for Todo', () => {
   describe('Create TODO POST: /api/v1/todos', () => {
     test('Server should create Todo if title is passed', async () => {
+      const { user, token } = await createAndAuthUser('test_user');
       await supertest(app)
         .post('/api/v1/todos')
+        .set({
+          'x-auth-token': token,
+        })
         .send({ title: 'First todo' })
         .expect(201)
         .then((res) => {
@@ -26,13 +30,19 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
+              creator: user.id
             },
           });
         });
     });
     test('Server should return validation error response if there is no title', async () => {
+      const { token } = await createAndAuthUser('test_user');
+
       await supertest(app)
         .post('/api/v1/todos')
+        .set({
+          'x-auth-token': token,
+        })
         .send({})
         .expect(400)
         .then((res) => {
@@ -45,12 +55,29 @@ describe('Test for Todo', () => {
           });
         });
     });
+    test('Server should return auth error response user is not authed', async () => {
+      await supertest(app)
+        .post('/api/v1/todos')
+        .send({})
+        .expect(401)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'Please authenticate',
+            code: ErrorCode.UNAUTHORIZED_ACCESS,
+          });
+        });
+    });
   });
   describe('Update TODO PATCH: /api/v1/todos/{todoId}', () => {
     test('Server should update Todo if title is passed', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .patch(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
         .send({ title: 'Changed todo' })
         .expect(200)
         .then((res) => {
@@ -63,6 +90,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
+              creator: user.id
             },
           });
         });
@@ -70,9 +98,14 @@ describe('Test for Todo', () => {
       expect(updateTodo?.title).toBe('Changed todo');
     });
     test('Server should update Todo if isCompleted flag is passed', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .patch(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
         .send({ isCompleted: true })
         .expect(200)
         .then((res) => {
@@ -85,6 +118,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: true,
+              creator: user.id
             },
           });
         });
@@ -92,12 +126,17 @@ describe('Test for Todo', () => {
       expect(updateTodo?.isCompleted).toBe(true);
     });
     test('Server should update Todo and isCompleted field to false', async () => {
+      const { user, token } = await createAndAuthUser('test_user');
+
       const todo = await TodoModel.create({
         title: 'First todo',
         isCompleted: true,
       });
       await supertest(app)
         .patch(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
         .send({ isCompleted: false, title: 'Second' })
         .expect(200)
         .then((res) => {
@@ -118,9 +157,14 @@ describe('Test for Todo', () => {
       expect(updateTodo?.title).toBe('Second');
     });
     test('Server should return validation error response if there is no title', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .patch(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
         .send({})
         .expect(400)
         .then((res) => {
@@ -134,9 +178,14 @@ describe('Test for Todo', () => {
         });
     });
     test('Server should return validation error if todo id is not a valid id format', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .patch(`/api/v1/todos/${todo.title}`)
+        .set({
+          'x-auth-token': token,
+        })
         .send({})
         .expect(400)
         .then((res) => {
@@ -151,8 +200,13 @@ describe('Test for Todo', () => {
         });
     });
     test('Server should return no found error if todo does not exist', async () => {
+      const { user, token } = await createAndAuthUser('test_user');
+
       await supertest(app)
         .patch(`/api/v1/todos/65681286e276dea4a21fdce8`)
+        .set({
+          'x-auth-token': token,
+        })
         .send({ title: 'Errored Todo' })
         .expect(404)
         .then((res) => {
@@ -168,7 +222,9 @@ describe('Test for Todo', () => {
   });
   describe('Delete TODO DELETE: /api/v1/todos/{todoId}', () => {
     test('Server should update Todo if title is passed', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .delete(`/api/v1/todos/${todo.id}`)
         .expect(200)
@@ -276,7 +332,9 @@ describe('Test for Todo', () => {
   });
   describe('Get a TODO GET: /api/v1/todos/{todoId}', () => {
     test('Server should return Todo if id matches', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .get(`/api/v1/todos/${todo.id}`)
         .expect(200)
@@ -290,12 +348,15 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
+              creator: user.id
             },
           });
         });
     });
     test('Server should return validation error if todo id is not a valid id format', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await supertest(app)
         .get(`/api/v1/todos/${todo.title}`)
         .expect(400)
@@ -310,7 +371,9 @@ describe('Test for Todo', () => {
         });
     });
     test('Server should return no found error if todo does not exist or is deleted', async () => {
-      const todo = await todoService.createTodo('First todo');
+      const { user, token } = await createAndAuthUser('test_user');
+
+      const todo = await todoService.createTodo('First todo', user.id);
       await todoService.deleteTodo(todo);
       await supertest(app)
         .get(`/api/v1/todos/${todo.id}`)

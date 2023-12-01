@@ -17,6 +17,10 @@ const TodoSchema = new mongoose.Schema<ITodoDoc>(
     isCompleted: {
       type: Boolean,
       default: false
+    },
+    creator: {
+      type: String,
+      ref: 'User'
     }
   },
   {

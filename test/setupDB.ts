@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import userService from '../src/services/user.service';
+import tokenService from '../src/services/token.service';
 
 let mongoServer: MongoMemoryServer;
 
@@ -18,5 +20,13 @@ const setupTestDB = () => {
     await mongoServer.stop();
   });
 };
+
+export const createAndAuthUser = async (username: string) => {
+  const user = await userService.createUser(username);
+  const token = await tokenService.generateToken(user.id)
+  return {
+    user, token
+  }
+}
 
 export default setupTestDB;

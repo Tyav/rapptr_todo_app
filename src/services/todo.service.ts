@@ -2,9 +2,10 @@ import { CreateTodo, ITodoDoc, UpdateTodo } from '../interfaces/todo.interface';
 import TodoModel from '../models/todo.model';
 
 class TodoService {
-  createTodo(title: string) {
+  createTodo(title: string, creator: string) {
     return TodoModel.create({
       title,
+      creator
     });
   }
 
