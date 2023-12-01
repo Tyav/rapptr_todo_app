@@ -7,3 +7,10 @@ export const objectId = (value: string, helpers: CustomHelpers) => {
   }
   return value;
 };
+
+export const usernameValidator = (value: string, helpers: CustomHelpers) => {
+  if (value.match(/[\s]/)) {
+    return helpers.message({ custom: '"{{#lebel}}" must not have a space'})
+  }
+  return value
+}
