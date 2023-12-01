@@ -131,6 +131,7 @@ describe('Test for Todo', () => {
       const todo = await TodoModel.create({
         title: 'First todo',
         isCompleted: true,
+        creator: user.id
       });
       await supertest(app)
         .patch(`/api/v1/todos/${todo.id}`)
@@ -149,6 +150,7 @@ describe('Test for Todo', () => {
               id: expect.stringMatching(/^[a-f0-9]{24}$/),
               isDeleted: false,
               isCompleted: false,
+              creator: user.id
             },
           });
         });
@@ -216,6 +218,24 @@ describe('Test for Todo', () => {
             data: {
               todoId: '65681286e276dea4a21fdce8',
             },
+          });
+        });
+    });
+    test('Server should return forbidden access error if authed user tries to update a todo they didn\'t create', async () => {
+      const { user } = await createAndAuthUser('test_user');
+      const { token } = await createAndAuthUser('test_user2');
+      const todo = await todoService.createTodo('First todo', user.id);
+      await supertest(app)
+        .patch(`/api/v1/todos/${todo.id}`)
+        .set({
+          'x-auth-token': token,
+        })
+        .send({ title: 'Errored Todo' })
+        .expect(403)
+        .then((res) => {
+          expect(res.body).toEqual({
+            message: 'User does not have permission to update this todo',
+            code: ErrorCode.FORBIDDEN,
           });
         });
     });

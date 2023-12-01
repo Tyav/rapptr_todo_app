@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { CreateTodo, UpdateTodo } from '../interfaces/todo.interface';
 import todoService from '../services/todo.service';
 import catchAsync from '../utils/catchAsync';
-import { ResourceNotFound } from '../services/error.service';
+import { ForbiddenAccess, ResourceNotFound } from '../services/error.service';
 
 class TodoController {
   createTodo = catchAsync(async (req: Request, res: Response) => {
@@ -16,6 +16,7 @@ class TodoController {
   });
 
   updateTodo = catchAsync(async (req: Request, res: Response) => {
+    const user = req.authUser;
     // get id and data
     const todoId = req.params.todoId as string;
     const data = req.body as UpdateTodo;
@@ -29,6 +30,11 @@ class TodoController {
           data: { todoId },
         })
       );
+    }
+    if (todo.creator !== user.id) {
+      return Promise.reject(new ForbiddenAccess({
+        message: 'User does not have permission to update this todo'
+      }))
     }
 
     // update todo
