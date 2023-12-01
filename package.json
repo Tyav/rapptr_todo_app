@@ -7,8 +7,9 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "build:watch": "tsc --build --watch",
     "start": "node www/bin",
+    "start:build": "yarn build & yarn start",
+    "build:watch": "tsc --build --watch",
     "pre:dev": "nodemon --experimental-modules --es-module-specifier-resolution=node www/bin",
     "dev": "concurrently --kill-others \"yarn build:watch\" \"yarn pre:dev\"",
     "test": "jest -i --verbose --detectOpenHandles"
